@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Not Mount Your Friends</title>
+	<style type="text/css">
+	body {
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+	}
+	</style>
+	<script type="text/javascript" src="js/liquidfun.js"></script>
+	<script type="text/javascript" src="js/pixi.min.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+
+var world;
+var bodyDef
+var player;
+var playerBodies = [];
+var playerAssets = [];
+var playerBody;
+var playerFixture
+var msg
+var touchX;
+var touchY;
+var doMagic = false;
+
+window.onload = function() {
+	const renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.view);
+	const stage = new PIXI.Container();
+	const asset = new PIXI.Container();
+	const water = new PIXI.Container();
+	var graphics = new PIXI.Graphics();
+
+	// Preload
+	PIXI.loader.
+		add('saitama', 'sprites/saitama.png').
+		add('ok', 'sprites/ok.png').
+		load(function (loader, resources) {
+			player = new PIXI.Sprite(resources.saitama.texture);
+			msg = new PIXI.Sprite(resources.ok.texture);
+
+			player.position.x = window.innerWidth / 2;
+			player.position.y = window.innerHeight / 2;
+			player.anchor.x = 0.5;
+			player.anchor.y = 0.5;
+
+			msg.position.x = player.position.x + 140;
+			msg.position.y = player.position.y;
+			msg.anchor.x = 0.5;
+			msg.anchor.y = 0.5;
+
+			asset.addChild(player);
+			asset.addChild(msg);
+			
+			const BlurEffect = new PIXI.filters.BlurFilter();
+			BlurEffect.blur = 4;
+			water.filters = [BlurEffect]
+
+			water.addChild(graphics);
+
+			stage.addChild(water);
+			stage.addChild(asset);
+
+			playerAssets.push(player);
+
+			onAssetsLoaded();
+		});
+	
+	function onAssetsLoaded(resources) {
+
+		const gravity = new b2Vec2(0, 10);
+		world = new b2World(gravity);
+		
+		// Abajo
+	 	bodyDef = new b2BodyDef();
+		bodyDef.position.Set(9, window.innerHeight / 100 + 1);
+		worldBound = new b2PolygonShape();
+		worldBound.SetAsBoxXY(10, 1);
+		world.CreateBody(bodyDef).CreateFixtureFromShape(worldBound, 0)
+		
+		// Izquierda
+		bodyDef.position.Set(-1, 0);
+		worldBound = new b2PolygonShape();
+		worldBound.SetAsBoxXY(1, 10);
+		world.CreateBody(bodyDef).CreateFixtureFromShape(worldBound, 0);
+
+		// Derecha
+		bodyDef.position.Set(window.innerWidth / 100 + 1, 0);
+		worldBound = new b2PolygonShape();
+		worldBound.SetAsBoxXY(1, 10);
+		world.CreateBody(bodyDef).CreateFixtureFromShape(worldBound, 0);
+		
+		// Saitama
+
+		bodyDef.type = b2_dynamicBody;
+
+		playerFixture = new b2FixtureDef();
+		playerFixture.shape = new b2CircleShape();
+
+		// Propiedades fisicas
+		playerFixture.density = 1;
+		playerFixture.restitution = 0.7;
+        playerFixture.friction = 0.5;
+		playerFixture.shape.radius = 40 / 100;
+
+		bodyDef.position.Set(player.position.x / 100, player.position.y / 100);
+		playerBody = world.CreateBody(bodyDef);
+		playerBody.CreateFixtureFromDef(playerFixture);
+		playerBodies.push(playerBody);
+
+	  	var psd = new b2ParticleSystemDef();
+		psd.radius = 0.1;
+		var particleSystem = world.CreateParticleSystem(psd);
+
+		// Grupo de particulas
+		var circle = new b2CircleShape();
+		circle.radius = 3;
+		var pgd = new b2ParticleGroupDef();
+		pgd.flags = b2_waterParticle;
+		pgd.shape = circle;
+		pgd.position.Set(window.innerWidth / 2 / 100, -1);
+		pgd.color.Set(0, 0, 255, 255);
+		particleSystem.CreateParticleGroup(pgd);
+
+		animLoop();
+	}
+
+	function animLoop() {
+		requestAnimationFrame(animLoop);
+
+		world.Step(1/60, 3, 3);
+
+		for (var i in playerBodies) {
+			var position = playerBodies[i].GetPosition();
+			var angle = playerBodies[i].GetAngle();
+			playerAssets[i].position.x = position.x * 100;
+			playerAssets[i].position.y = position.y * 100;
+			playerAssets[i].rotation = angle;
+		}
+
+		renderLiquid();
+
+		// render the stage
+		renderer.render(stage);
+	};
+
+
+	document.addEventListener("mouseup", function(e) {
+		createPlayer(e.clientX, e.clientY);
+	})
+
+	function createPlayer(x, y) {
+
+		player = new PIXI.Sprite.fromImage( (Math.random() > 0.5 ? 'sprites/saitama.png' : 'sprites/david.png') );
+		player.position.x = x;
+		player.position.y = y;
+		player.anchor.x = 0.5;
+		player.anchor.y = 0.5;
+		stage.addChild(player);
+		playerAssets.push(player);
+
+		bodyDef.position.Set(x / 100, y / 100);
+		playerBody = world.CreateBody(bodyDef);
+		playerBody.CreateFixtureFromDef(playerFixture);
+
+		playerBodies.push(playerBody);
+	}
+
+	function renderLiquid() {
+		particles = world.particleSystems[0].GetPositionBuffer();
+		graphics.clear();
+		graphics.beginFill(0x0000FF);
+		for(var j=0, pl = particles.length; j < pl; j += 2) {
+			graphics.drawRect(particles[j] * 100, particles[j+1] * 100, 3, 3);
+		}
+	}
+}
+
+</script>
+</body>
+</html>
