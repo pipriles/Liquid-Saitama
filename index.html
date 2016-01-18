@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Not Mount Your Friends</title>
+	<title>Liquid Saitama</title>
 	<style type="text/css">
 	body {
 		margin: 0;
@@ -11,6 +11,7 @@
 	</style>
 	<script type="text/javascript" src="js/liquidfun.js"></script>
 	<script type="text/javascript" src="js/pixi.min.js"></script>
+	<script type="text/javascript" src="js/render-pixi-custom.js"></script>
 </head>
 <body>
 <script type="text/javascript">
@@ -56,10 +57,12 @@ window.onload = function() {
 			asset.addChild(player);
 			asset.addChild(msg);
 			
-			const BlurEffect = new PIXI.filters.BlurFilter();
-			BlurEffect.blur = 4;
-			water.filters = [BlurEffect]
-
+			const blurEffect = new PIXI.filters.BlurFilter();
+			const thresholdFilter = new ThresholdFilter();  
+			thresholdFilter.threshold = 0.008;  
+			blurEffect.blurr = 3;
+			water.filters = [blurEffect, thresholdFilter];
+			water.alpha = 0.01;
 			water.addChild(graphics);
 
 			stage.addChild(water);
@@ -102,7 +105,7 @@ window.onload = function() {
 		playerFixture.shape = new b2CircleShape();
 
 		// Propiedades fisicas
-		playerFixture.density = 1;
+		playerFixture.density = 0.6;
 		playerFixture.restitution = 0.7;
         playerFixture.friction = 0.5;
 		playerFixture.shape.radius = 40 / 100;
@@ -113,7 +116,7 @@ window.onload = function() {
 		playerBodies.push(playerBody);
 
 	  	var psd = new b2ParticleSystemDef();
-		psd.radius = 0.1;
+		psd.radius = 0.05;
 		var particleSystem = world.CreateParticleSystem(psd);
 
 		// Grupo de particulas
@@ -175,7 +178,7 @@ window.onload = function() {
 		graphics.clear();
 		graphics.beginFill(0x0000FF);
 		for(var j=0, pl = particles.length; j < pl; j += 2) {
-			graphics.drawRect(particles[j] * 100, particles[j+1] * 100, 3, 3);
+			graphics.drawRect(particles[j] * 100, particles[j+1] * 100, 7, 7);
 		}
 	}
 }
